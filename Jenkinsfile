@@ -22,12 +22,15 @@ node {
 
     stage('Deploy') {
         sh 'sleep 10'
-        
-        echo "Menjalankan aplikasi di server lokal..."
-        
         sh 'chmod +x ./jenkins/scripts/deliver.sh'
+        
+        // Jalankan aplikasi
         sh './jenkins/scripts/deliver.sh'
         
-        echo "Aplikasi berhasil berjalan!"
+        // KRITERIA 4: Gunakan input di sini untuk menahan proses agar tidak mati
+        input message: 'Aplikasi sudah jalan di http://localhost:3000. Klik Proceed jika ingin mematikan aplikasi.'
+        
+        // (Opsional) Jalankan script kill jika ada
+        // sh './jenkins/scripts/kill.sh'
     }
 }
