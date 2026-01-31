@@ -1,20 +1,23 @@
 node {
-    // Stage 1: Ambil kode dari GitHub
+    // Definisi image yang akan digunakan
+    def nodeImage = docker.image('node:16-buster-slim')
+
     stage('Checkout') {
+        // Mengambil kode dari GitHub
         checkout scm
     }
 
-    // Stage 2: Proses Build
-    stage('Build') {
-        // Sesuaikan perintah sh dengan kebutuhan React App kamu
-        // Contoh jika menggunakan Docker untuk build:
-        sh 'docker build -t my-react-app .'
-    }
+    // Menjalankan perintah di dalam container
+    nodeImage.inside('-p 3000:3000') {
+        
+        stage('Build') {
+            sh 'npm install'
+        }
 
-    // Stage 3: Proses Test
-    stage('Test') {
-        // Contoh menjalankan test di dalam container
-        sh 'echo "Running tests..." '
-        // sh 'docker run my-react-app npm test'
+        stage('Test') {
+            // Memastikan file script memiliki izin eksekusi
+            sh 'chmod +x ./jenkins/scripts/test.sh'
+            sh './jenkins/scripts/test.sh'
+        }
     }
 }
