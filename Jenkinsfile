@@ -29,5 +29,5 @@ node {
         sh './jenkins/scripts/deliver.sh'
         
         echo "Aplikasi berhasil berjalan!"
-    }
+    }a
 }
