@@ -1,33 +1,44 @@
 node {
-    def nodeImage = docker.image('node:16-buster-slim')
-    
     stage('Checkout') {
         checkout scm
     }
 
-    nodeImage.inside('-p 3000:3000') {
-        
+    docker.image('node:16-buster-slim').inside {
         stage('Build') {
             sh 'npm install'
+            sh 'npm run build'
         }
-
+        
         stage('Test') {
             sh 'chmod +x ./jenkins/scripts/test.sh'
             sh './jenkins/scripts/test.sh'
         }
+    }
 
-        stage('Manual Approval') {
-            input message: 'Hasil tes sudah oke? Lanjutkan ke tahap Deploy?'
-        }
+    stage('Manual Approval') {
+        input message: 'Hasil tes aman? Lanjut ke tahap Deploy?', ok: 'Proceed'
+    }
 
+    docker.image('node:20-buster-slim').inside {
         stage('Deploy') {
-            sh 'sleep 10'
+            withCredentials([
+                string(credentialsId: 'CF_PAGES_TOKEN', variable: 'CF_TOKEN'),
+                string(credentialsId: 'CF_ACCOUNT_ID', variable: 'CF_ACCOUNT')
+            ]) {
+                echo "Mulai deploy ke Cloudflare Pages..."
+                
+                sh """
+                    export CLOUDFLARE_API_TOKEN=${CF_TOKEN}
+                    export CLOUDFLARE_ACCOUNT_ID=${CF_ACCOUNT}
+                    npx wrangler pages deploy build --project-name=my-react-app
+                """
+            }
+
+            echo "Aplikasi berhasil LIVE! Pipeline akan dijeda selama 1 menit..."
+
+            sh 'sleep 60'
             
-            echo "Menjalankan aplikasi di server lokal..."
-            sh 'chmod +x ./jenkins/scripts/deliver.sh'
-            sh './jenkins/scripts/deliver.sh'
-            
-            echo "Aplikasi berhasil berjalan!"
+            echo "Waktu monitoring selesai. Eksekusi pipeline sukses!"
         }
-    } 
-} 
+    }
+}
